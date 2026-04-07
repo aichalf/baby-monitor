@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import "./index.css";
 
 const fallbackData = {
-  babyTemp: 36.8,
-  heartRate: 142,
-  movement: "Normal",
-  movementLevel: 82,
+  babyTemp: 0,
+  heartRate: 0,
+  movement: "En attente",
+  movementLevel: 0,
   state: "NORMAL",
-  message: "Tous les paramètres sont normaux.",
+  message: "En attente de données STM32.",
   connected: false,
   source: "default"
 };
@@ -72,7 +72,9 @@ function App() {
 
           <div className="card">
             <div className="label">Fréquence cardiaque</div>
-            <div className="value">{data.heartRate} bpm</div>
+            <div className="value">
+              {data.heartRate === 0 ? "No contact" : `${data.heartRate} bpm`}
+            </div>
           </div>
 
           <div className="card">

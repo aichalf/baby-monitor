@@ -1,4 +1,4 @@
-import json
+import re
 import threading
 import time
 from typing import Any, Dict
@@ -16,12 +16,12 @@ BAUD_RATE = 115200
 USE_SIMULATION_IF_NO_SERIAL = True
 
 latest_data: Dict[str, Any] = {
-    "babyTemp": 36.8,
-    "heartRate": 142,
-    "movement": "Normal",
-    "movementLevel": 82,
+    "babyTemp": 0,
+    "heartRate": 0,
+    "movement": "En attente",
+    "movementLevel": 0,
     "state": "NORMAL",
-    "message": "Tous les paramètres sont normaux.",
+    "message": "En attente de données STM32.",
     "connected": False,
     "source": "default"
 }
@@ -36,42 +36,112 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def normalize_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    data = {
-        "babyTemp": float(payload.get("babyTemp", 0)),
-        "heartRate": int(payload.get("heartRate", 0)),
-        "spo2": int(payload.get("spo2", 0)),
-        "movement": str(payload.get("movement", "Inconnu")),
-        "movementLevel": int(payload.get("movementLevel", 0)),
-        "roomTemp": float(payload.get("roomTemp", 0)),
-        "humidity": int(payload.get("humidity", 0)),
-        "smoke": bool(payload.get("smoke", False)),
-        "state": str(payload.get("state", "NORMAL")).upper(),
-        "message": str(payload.get("message", "")),
-        "connected": True,
-        "source": "stm32"
-    }
-    return data
+def update_state() -> None:
+    global latest_data
 
-def simulate_data():
+    temp = latest_data.get("babyTemp", 0)
+    bpm = latest_data.get("heartRate", 0)
+    movement = latest_data.get("movement", "En attente")
+
+    emergency = False
+    reasons = []
+
+    if bpm == 0:
+        emergency = True
+        reasons.append("aucun contact cardiaque")
+
+    if movement == "Alerte":
+        emergency = True
+        reasons.append("alerte mouvement")
+
+    if temp > 36 or temp < 20:
+        emergency = True
+        reasons.append("température anormale")
+
+    if emergency:
+        latest_data["state"] = "EMERGENCY"
+        latest_data["message"] = "Urgence détectée : vérifier le bébé immédiatement."
+    else:
+        latest_data["state"] = "NORMAL"
+        latest_data["message"] = "Tous les paramètres sont normaux."
+
+def parse_stm32_line(raw: str) -> None:
+    global latest_data
+
+    line = raw.strip()
+    lower = line.lower()
+
+    if not line:
+        return
+
+    # Température venant du code STM32 actuel: "Temp = 25 C"
+    if "temp" in lower:
+        match = re.search(r"(-?\d+(\.\d+)?)", line)
+        if match:
+            latest_data["babyTemp"] = float(match.group(1))
+            latest_data["connected"] = True
+            latest_data["source"] = "stm32"
+            update_state()
+        return
+
+    # BPM venant du code STM32 actuel: "BPM = 92"
+    if "bpm" in lower:
+        if "no contact" in lower or "no finger" in lower:
+            latest_data["heartRate"] = 0
+        else:
+            match = re.search(r"(\d+)", line)
+            if match:
+                latest_data["heartRate"] = int(match.group(1))
+
+        latest_data["connected"] = True
+        latest_data["source"] = "stm32"
+        update_state()
+        return
+
+    # Mouvement: version tolérante selon ce que votre carte affiche
+    if "movement detected" in lower:
+        latest_data["movement"] = "Normal"
+        latest_data["movementLevel"] = 100
+        latest_data["connected"] = True
+        latest_data["source"] = "stm32"
+        update_state()
+        return
+
+    if "movement alert" in lower or "no movement" in lower:
+        latest_data["movement"] = "Alerte"
+        latest_data["movementLevel"] = 0
+        latest_data["connected"] = True
+        latest_data["source"] = "stm32"
+        update_state()
+        return
+
+    # Si le STM32 envoie aussi une ligne "No contact" seule
+    if "no contact" in lower or "no finger" in lower:
+        latest_data["heartRate"] = 0
+        latest_data["connected"] = True
+        latest_data["source"] = "stm32"
+        update_state()
+        return
+
+def simulate_data() -> None:
     global latest_data
 
     scenarios = [
         {
-            "babyTemp": 36.8,
-            "heartRate": 142,
+            "babyTemp": 25.1,
+            "heartRate": 92,
             "movement": "Normal",
-            "movementLevel": 82,
+            "movementLevel": 100,
             "state": "NORMAL",
             "message": "Tous les paramètres sont normaux.",
             "connected": False,
             "source": "simulation"
         },
         {
-            "babyTemp": 38.3,
-            "heartRate": 178,
-            "movement": "Aucun mouvement",
-            "movementLevel": 5,
+            "babyTemp": 25.7,
+            "heartRate": 0,
+            "movement": "Alerte",
+            "movementLevel": 0,
             "state": "EMERGENCY",
             "message": "Urgence détectée : vérifier le bébé immédiatement.",
             "connected": False,
@@ -85,7 +155,7 @@ def simulate_data():
             print("Simulation:", latest_data)
             time.sleep(5)
 
-def serial_reader():
+def serial_reader() -> None:
     global latest_data
 
     if serial is None:
@@ -106,12 +176,8 @@ def serial_reader():
                     if not raw:
                         continue
 
-                    try:
-                        payload = json.loads(raw)
-                        latest_data = normalize_payload(payload)
-                        print("Données reçues:", latest_data)
-                    except json.JSONDecodeError:
-                        print("JSON invalide reçu:", raw)
+                    print("STM32:", raw)
+                    parse_stm32_line(raw)
 
         except Exception as e:
             print("Erreur série:", e)
