@@ -110,8 +110,8 @@ function App() {
             </svg>
           </div>
           <div>
-            <span className="nav-name">BabyMonitor</span>
-            <span className="nav-tag">Clinical Dashboard</span>
+            <span className="nav-name">BabySafe</span>
+            <span className="nav-tag">Infant Care Platform</span>
           </div>
         </div>
 
@@ -152,7 +152,7 @@ function App() {
 
         <div className="page-header">
           <div>
-            <h1 className="page-title">Infant Monitoring</h1>
+            <h1 className="page-title">BabySafe Dashboard</h1>
             <p className="page-sub">Real-time vitals and system assessment dashboard</p>
           </div>
           <div className="header-meta">
