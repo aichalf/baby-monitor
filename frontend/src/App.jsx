@@ -75,7 +75,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/data");
+        const res = await fetch("https://baby-monitor-production-cf03.up.railway.app/api/data");
         if (!res.ok) throw new Error("Erreur API");
         const json = await res.json();
         setData(json);
