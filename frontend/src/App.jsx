@@ -138,197 +138,153 @@ function App() {
         </div>
       </nav>
 
-      <div className="page-body">
-        <aside className="sidebar">
-          <div className="sidebar-section">
-            <div className="sidebar-label">System Status</div>
-            <div className={`status-badge-large${isEmergency ? " danger" : " safe"}`}>
-              <div className="sbadge-icon">{isEmergency ? "⚠" : "✓"}</div>
-              <div>
-                <div className="sbadge-state">{data.state}</div>
-                <div className="sbadge-sub">Current state</div>
-              </div>
+      <main className="main">
+        {error && (
+          <div className="error-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {error}
+          </div>
+        )}
+
+        <div className="page-header">
+          <div>
+            <h1 className="page-title">Infant Monitoring</h1>
+            <p className="page-sub">Real-time vitals and system assessment dashboard</p>
+          </div>
+          <div className="header-meta">
+            <div className="meta-item">
+              <span>Hardware</span>
+              <strong className={data.connected ? "val-green" : ""}>{data.connected ? "STM32 Online" : "Simulation"}</strong>
+            </div>
+            <div className="meta-item">
+              <span>Motion</span>
+              <strong>{data.movementLevel ?? 0}%</strong>
+            </div>
+            <div className="meta-item">
+              <span>Source</span>
+              <strong>{data.source}</strong>
             </div>
           </div>
+        </div>
 
-          <div className="sidebar-divider" />
+        <div className={`alert-hero${isEmergency ? " emergency" : " normal"}`}>
+          <div className="alert-hero-icon">
+            {isEmergency ? <AlertIcon /> : <CheckIcon />}
+          </div>
+          <div className="alert-hero-body">
+            <div className="alert-hero-eyebrow">Live Assessment</div>
+            <h2 className="alert-hero-title">
+              {isEmergency ? "Emergency Detected" : "Patient Status Normal"}
+            </h2>
+            <p className="alert-hero-msg">{data.message}</p>
+          </div>
+          <div className="alert-hero-badge">
+            {isEmergency ? "Requires Attention" : "Monitoring Active"}
+          </div>
+        </div>
 
-          <div className="sidebar-section">
-            <div className="sidebar-label">Connection</div>
-            <div className="info-rows">
-              <div className="info-row">
-                <span>Hardware</span>
-                <span className={`info-val${data.connected ? " green" : " muted"}`}>
-                  {data.connected ? "STM32 Online" : "Simulation"}
+        <div className="metrics-row">
+          <div className={`metric-card${tempStatus === "warning" ? " metric-warn" : ""}`}>
+            <div className="metric-card-top">
+              <div className={`metric-icon temp-icon ${tempStatus}`}>
+                <TempIcon />
+              </div>
+              <div className="metric-chip-wrap">
+                <span className="metric-label">Body Temperature</span>
+                <span className={`metric-status-chip ${tempStatus}`}>
+                  {tempStatus === "no-data" ? "No Data" : tempStatus === "warning" ? "Out of Range" : "Normal"}
                 </span>
               </div>
-              <div className="info-row">
-                <span>Source</span>
-                <span className="info-val">{data.source}</span>
-              </div>
-              <div className="info-row">
-                <span>Mode</span>
-                <span className="info-val">{data.connected ? "Live" : "Demo"}</span>
-              </div>
             </div>
+            <div className="metric-value">{data.babyTemp === 0 ? "—" : data.babyTemp}</div>
+            <div className="metric-unit">°C</div>
+            <div className="metric-range">Normal range: 36.0 – 37.5 °C</div>
           </div>
 
-          <div className="sidebar-divider" />
-
-          <div className="sidebar-section">
-            <div className="sidebar-label">Motion Level</div>
-            <div className="motion-display">
-              <div className="motion-value">{data.movementLevel ?? 0}%</div>
-              <div className="motion-bar-track">
-                <div className="motion-bar-fill" style={{ width: `${data.movementLevel ?? 0}%` }} />
+          <div className={`metric-card${hrStatus === "warning" ? " metric-warn" : ""}`}>
+            <div className="metric-card-top">
+              <div className={`metric-icon heart-icon ${hrStatus}`}>
+                <HeartIcon />
               </div>
-              <div className="motion-label">{data.movement}</div>
+              <div className="metric-chip-wrap">
+                <span className="metric-label">Heart Rate</span>
+                <span className={`metric-status-chip ${hrStatus}`}>
+                  {hrStatus === "no-data" ? "No Contact" : hrStatus === "warning" ? "Out of Range" : "Normal"}
+                </span>
+              </div>
             </div>
+            <div className="metric-value">{data.heartRate === 0 ? "—" : data.heartRate}</div>
+            <div className="metric-unit">bpm</div>
+            <div className="metric-range">Normal infant: 100 – 160 bpm</div>
           </div>
 
-          <div className="sidebar-divider" />
-
-          <div className="sidebar-section sidebar-about">
-            <div className="sidebar-label">About</div>
-            <p>Embedded monitoring interface for real-time infant vitals. Data sourced from the STM32 hardware module via FastAPI backend.</p>
-            <div className="version-tag">v1.0 · CSI4541</div>
+          <div className="metric-card">
+            <div className="metric-card-top">
+              <div className="metric-icon move-icon">
+                <MoveIcon />
+              </div>
+              <div className="metric-chip-wrap">
+                <span className="metric-label">Movement</span>
+                <span className="metric-status-chip normal">Sensor Active</span>
+              </div>
+            </div>
+            <div className="metric-value movement-text">{data.movement}</div>
+            <div className="metric-unit">&nbsp;</div>
+            <div className="metric-range">Motion level: {data.movementLevel ?? 0}%</div>
           </div>
-        </aside>
+        </div>
 
-        <main className="main">
-          {error && (
-            <div className="error-banner">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              {error}
+        <div className="lower-row">
+          <div className="detail-card">
+            <div className="detail-card-header">
+              <h3>Monitoring Summary</h3>
+              <span className="live-tag"><span></span>Live</span>
             </div>
-          )}
-
-          <div className="page-header">
-            <div>
-              <h1 className="page-title">Infant Monitoring</h1>
-              <p className="page-sub">Real-time vitals and system assessment dashboard</p>
-            </div>
-          </div>
-
-          <div className={`alert-hero${isEmergency ? " emergency" : " normal"}`}>
-            <div className="alert-hero-icon">
-              {isEmergency ? <AlertIcon /> : <CheckIcon />}
-            </div>
-            <div className="alert-hero-body">
-              <div className="alert-hero-eyebrow">Live Assessment</div>
-              <h2 className="alert-hero-title">
-                {isEmergency ? "Emergency Detected" : "Patient Status Normal"}
-              </h2>
-              <p className="alert-hero-msg">{data.message}</p>
-            </div>
-            <div className="alert-hero-badge">
-              {isEmergency ? "Requires Attention" : "Monitoring Active"}
-            </div>
+            <table className="detail-table">
+              <tbody>
+                <tr><td>Global state</td><td><strong className={isEmergency ? "val-red" : "val-green"}>{data.state}</strong></td></tr>
+                <tr><td>System message</td><td><strong>{data.message}</strong></td></tr>
+                <tr><td>Hardware link</td><td><strong>{data.connected ? "Connected" : "Offline / Simulation"}</strong></td></tr>
+                <tr><td>Data source</td><td><strong>{data.source}</strong></td></tr>
+                <tr><td>Last update</td><td><strong>{lastUpdate ? formatTime(lastUpdate) : "—"}</strong></td></tr>
+              </tbody>
+            </table>
           </div>
 
-          <div className="metrics-row">
-            <div className={`metric-card${tempStatus === "warning" ? " metric-warn" : ""}`}>
-              <div className="metric-card-top">
-                <div className={`metric-icon temp-icon ${tempStatus}`}>
-                  <TempIcon />
-                </div>
-                <div className="metric-chip-wrap">
-                  <span className="metric-label">Body Temperature</span>
-                  <span className={`metric-status-chip ${tempStatus}`}>
-                    {tempStatus === "no-data" ? "No Data" : tempStatus === "warning" ? "Out of Range" : "Normal"}
-                  </span>
-                </div>
-              </div>
-              <div className="metric-value">{data.babyTemp === 0 ? "—" : data.babyTemp}</div>
-              <div className="metric-unit">°C</div>
-              <div className="metric-range">Normal range: 36.0 – 37.5 °C</div>
+          <div className={`guidance-card${isEmergency ? " guidance-emergency" : ""}`}>
+            <div className="detail-card-header">
+              <h3>Response Guidance</h3>
+              <span className="operator-tag">Operator</span>
             </div>
-
-            <div className={`metric-card${hrStatus === "warning" ? " metric-warn" : ""}`}>
-              <div className="metric-card-top">
-                <div className={`metric-icon heart-icon ${hrStatus}`}>
-                  <HeartIcon />
-                </div>
-                <div className="metric-chip-wrap">
-                  <span className="metric-label">Heart Rate</span>
-                  <span className={`metric-status-chip ${hrStatus}`}>
-                    {hrStatus === "no-data" ? "No Contact" : hrStatus === "warning" ? "Out of Range" : "Normal"}
-                  </span>
-                </div>
-              </div>
-              <div className="metric-value">{data.heartRate === 0 ? "—" : data.heartRate}</div>
-              <div className="metric-unit">bpm</div>
-              <div className="metric-range">Normal infant: 100 – 160 bpm</div>
-            </div>
-
-            <div className="metric-card">
-              <div className="metric-card-top">
-                <div className="metric-icon move-icon normal">
-                  <MoveIcon />
-                </div>
-                <div className="metric-chip-wrap">
-                  <span className="metric-label">Movement</span>
-                  <span className="metric-status-chip normal">Sensor Active</span>
-                </div>
-              </div>
-              <div className="metric-value movement-text">{data.movement}</div>
-              <div className="metric-unit">&nbsp;</div>
-              <div className="metric-range">Motion level: {data.movementLevel ?? 0}%</div>
+            <div className="guidance-content">
+              {isEmergency ? (
+                <>
+                  <div className="guidance-head danger">Immediate Action Required</div>
+                  <ul className="guidance-list">
+                    <li>Check on infant immediately</li>
+                    <li>Verify heart rate sensor contact</li>
+                    <li>Confirm physical sensor conditions</li>
+                    <li>Contact caregiver if unresponsive</li>
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <div className="guidance-head safe">System Stable</div>
+                  <ul className="guidance-list">
+                    <li>All parameters within normal range</li>
+                    <li>Monitoring running continuously</li>
+                    <li>No action required at this time</li>
+                  </ul>
+                </>
+              )}
             </div>
           </div>
-
-          <div className="lower-row">
-            <div className="detail-card">
-              <div className="detail-card-header">
-                <h3>Monitoring Summary</h3>
-                <span className="live-tag"><span></span>Live</span>
-              </div>
-              <table className="detail-table">
-                <tbody>
-                  <tr><td>Global state</td><td><strong className={isEmergency ? "val-red" : "val-green"}>{data.state}</strong></td></tr>
-                  <tr><td>System message</td><td><strong>{data.message}</strong></td></tr>
-                  <tr><td>Hardware link</td><td><strong>{data.connected ? "Connected" : "Offline / Simulation"}</strong></td></tr>
-                  <tr><td>Data source</td><td><strong>{data.source}</strong></td></tr>
-                  <tr><td>Last update</td><td><strong>{lastUpdate ? formatTime(lastUpdate) : "—"}</strong></td></tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className={`guidance-card${isEmergency ? " guidance-emergency" : ""}`}>
-              <div className="detail-card-header">
-                <h3>Response Guidance</h3>
-                <span className="operator-tag">Operator</span>
-              </div>
-              <div className="guidance-content">
-                {isEmergency ? (
-                  <>
-                    <div className="guidance-head danger">Immediate Action Required</div>
-                    <ul className="guidance-list">
-                      <li>Check on infant immediately</li>
-                      <li>Verify heart rate sensor contact</li>
-                      <li>Confirm physical sensor conditions</li>
-                      <li>Contact caregiver if unresponsive</li>
-                    </ul>
-                  </>
-                ) : (
-                  <>
-                    <div className="guidance-head safe">System Stable</div>
-                    <ul className="guidance-list">
-                      <li>All parameters within normal range</li>
-                      <li>Monitoring running continuously</li>
-                      <li>No action required at this time</li>
-                    </ul>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
