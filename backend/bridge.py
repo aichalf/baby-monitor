@@ -3,7 +3,7 @@ import time
 import requests
 import serial
 
-SERIAL_PORT = "COM3"
+SERIAL_PORT = "COM5"
 BAUD_RATE = 115200
 API_URL = "https://baby-monitor-production-cf03.up.railway.app/api/update"
 
