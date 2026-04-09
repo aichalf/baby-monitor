@@ -30,7 +30,13 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://baby-monitor-ashy.vercel.app",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,7 +80,6 @@ def parse_stm32_line(raw: str) -> None:
     if not line:
         return
 
-    # Température venant du code STM32 actuel: "Temp = 25 C"
     if "temp" in lower:
         match = re.search(r"(-?\d+(\.\d+)?)", line)
         if match:
@@ -84,7 +89,6 @@ def parse_stm32_line(raw: str) -> None:
             update_state()
         return
 
-    # BPM venant du code STM32 actuel: "BPM = 92"
     if "bpm" in lower:
         if "no contact" in lower or "no finger" in lower:
             latest_data["heartRate"] = 0
@@ -98,7 +102,6 @@ def parse_stm32_line(raw: str) -> None:
         update_state()
         return
 
-    # Mouvement: version tolérante selon ce que votre carte affiche
     if "movement detected" in lower:
         latest_data["movement"] = "Normal"
         latest_data["movementLevel"] = 100
@@ -115,7 +118,6 @@ def parse_stm32_line(raw: str) -> None:
         update_state()
         return
 
-    # Si le STM32 envoie aussi une ligne "No contact" seule
     if "no contact" in lower or "no finger" in lower:
         latest_data["heartRate"] = 0
         latest_data["connected"] = True
