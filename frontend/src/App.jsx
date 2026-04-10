@@ -75,7 +75,8 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("https://baby-monitor-production-cf03.up.railway.app/api/data");
+        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const res = await fetch(`${API_BASE}/api/data`);
         if (!res.ok) throw new Error("Erreur API");
         const json = await res.json();
         setData(json);
@@ -235,6 +236,23 @@ function App() {
             <div className="metric-value movement-text">{data.movement}</div>
             <div className="metric-unit">&nbsp;</div>
             <div className="metric-range">Motion level: {data.movementLevel ?? 0}%</div>
+          </div>
+
+          <div className={`metric-card${data.spo2 > 0 && data.spo2 < 95 ? " metric-warn" : ""}`}>
+            <div className="metric-card-top">
+              <div className="metric-icon">
+                <span style={{fontSize:"1.4rem"}}>🩸</span>
+              </div>
+              <div className="metric-chip-wrap">
+                <span className="metric-label">Saturation O₂ (SpO2)</span>
+                <span className={`metric-status-chip ${data.spo2 >= 95 ? "normal" : "warning"}`}>
+                  {data.spo2 >= 95 ? "Normal" : data.spo2 > 0 ? "Bas" : "En attente"}
+                </span>
+              </div>
+            </div>
+            <div className="metric-value">{data.spo2 > 0 ? data.spo2 : "—"}</div>
+            <div className="metric-unit">%</div>
+            <div className="metric-range">Plage normale: 95 – 100%</div>
           </div>
         </div>
 
