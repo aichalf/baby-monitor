@@ -76,7 +76,9 @@ function App() {
     const fetchData = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-        const res = await fetch(`${API_BASE}/api/data`);
+        const res = await fetch(`${API_BASE}/api/data`, {
+            headers: { "ngrok-skip-browser-warning": "true" }
+          });
         if (!res.ok) throw new Error("Erreur API");
         const json = await res.json();
         setData(json);
