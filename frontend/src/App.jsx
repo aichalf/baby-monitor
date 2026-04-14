@@ -92,15 +92,9 @@ function App() {
       try {
         const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
         const res = await fetch(`${API_BASE}/api/data`, {
-<<<<<<< HEAD
           headers: { "ngrok-skip-browser-warning": "true" }
         });
         if (!res.ok) throw new Error("API Error");
-=======
-            headers: { "ngrok-skip-browser-warning": "true" }
-          });
-        if (!res.ok) throw new Error("Erreur API");
->>>>>>> 833ebdd76669f4d3aa60abab1cc02844393bd57b
         const json = await res.json();
         setData({ ...fallbackData, ...json });
         setLastUpdate(new Date());
@@ -297,13 +291,13 @@ function App() {
               <div className="metric-chip-wrap">
                 <span className="metric-label">Saturation O₂ (SpO2)</span>
                 <span className={`metric-status-chip ${data.spo2 >= 95 ? "normal" : "warning"}`}>
-                  {data.spo2 >= 95 ? "Normal" : data.spo2 > 0 ? "Bas" : "En attente"}
+                  {data.spo2 >= 95 ? "Normal" : data.spo2 > 0 ? "Low" : "Waiting"}
                 </span>
               </div>
             </div>
             <div className="metric-value">{data.spo2 > 0 ? data.spo2 : "—"}</div>
             <div className="metric-unit">%</div>
-            <div className="metric-range">Plage normale: 95 – 100%</div>
+            <div className="metric-range">Normal range: 95 – 100%</div>
           </div>
         </div>
 
