@@ -4,10 +4,11 @@ import "./index.css";
 const fallbackData = {
   babyTemp: 0,
   heartRate: 0,
-  movement: "En attente",
+  spo2: 0,
+  movement: "No Movement",
   movementLevel: 0,
   state: "NORMAL",
-  message: "En attente de données STM32.",
+  message: "Waiting for STM32 data.",
   connected: false,
   source: "default"
 };
@@ -21,6 +22,14 @@ const TempIcon = () => (
 const HeartIcon = () => (
   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+  </svg>
+);
+
+const OxygenIcon = () => (
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3c2.8 3.2 5 5.9 5 9a5 5 0 0 1-10 0c0-3.1 2.2-5.8 5-9z"/>
+    <path d="M12 8v8"/>
+    <path d="M8.5 12h7"/>
   </svg>
 );
 
@@ -54,7 +63,13 @@ function getTempStatus(temp) {
 
 function getHRStatus(hr) {
   if (hr === 0) return "no-data";
-  if (hr < 100 || hr > 160) return "warning";
+  if (hr < 80 || hr > 160) return "warning";
+  return "normal";
+}
+
+function getSpO2Status(spo2) {
+  if (spo2 === 0) return "no-data";
+  if (spo2 < 95) return "warning";
   return "normal";
 }
 
@@ -75,14 +90,17 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("https://baby-monitor-production-cf03.up.railway.app/api/data");
-        if (!res.ok) throw new Error("Erreur API");
+        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const res = await fetch(`${API_BASE}/api/data`, {
+          headers: { "ngrok-skip-browser-warning": "true" }
+        });
+        if (!res.ok) throw new Error("API Error");
         const json = await res.json();
-        setData(json);
+        setData({ ...fallbackData, ...json });
         setLastUpdate(new Date());
         setError("");
       } catch {
-        setError("Backend non connecté — mode simulation actif");
+        setError("Backend not connected — simulation mode active");
       }
     };
 
@@ -99,6 +117,7 @@ function App() {
   const isEmergency = data.state === "EMERGENCY";
   const tempStatus = getTempStatus(data.babyTemp);
   const hrStatus = getHRStatus(data.heartRate);
+  const spo2Status = getSpO2Status(data.spo2);
 
   return (
     <div className={`app-shell${isEmergency ? " emergency-mode" : ""}`}>
@@ -158,11 +177,17 @@ function App() {
           <div className="header-meta">
             <div className="meta-item">
               <span>Hardware</span>
-              <strong className={data.connected ? "val-green" : ""}>{data.connected ? "STM32 Online" : "Simulation"}</strong>
+              <strong className={data.connected ? "val-green" : ""}>
+                {data.connected ? "STM32 Online" : "Simulation"}
+              </strong>
             </div>
             <div className="meta-item">
               <span>Motion</span>
               <strong>{data.movementLevel ?? 0}%</strong>
+            </div>
+            <div className="meta-item">
+              <span>SpO₂</span>
+              <strong>{data.spo2 === 0 ? "—" : `${data.spo2}%`}</strong>
             </div>
             <div className="meta-item">
               <span>Source</span>
@@ -219,20 +244,41 @@ function App() {
             </div>
             <div className="metric-value">{data.heartRate === 0 ? "—" : data.heartRate}</div>
             <div className="metric-unit">bpm</div>
-            <div className="metric-range">Normal infant: 100 – 160 bpm</div>
+            <div className="metric-range">Normal infant: 80 – 160 bpm</div>
           </div>
 
-          <div className="metric-card">
+          <div className={`metric-card${spo2Status === "warning" ? " metric-warn" : ""}`}>
+            <div className="metric-card-top">
+              <div className={`metric-icon oxygen-icon ${spo2Status}`}>
+                <OxygenIcon />
+              </div>
+              <div className="metric-chip-wrap">
+                <span className="metric-label">Blood Oxygen</span>
+                <span className={`metric-status-chip ${spo2Status}`}>
+                  {spo2Status === "no-data" ? "No Data" : spo2Status === "warning" ? "Low" : "Normal"}
+                </span>
+              </div>
+            </div>
+            <div className="metric-value">{data.spo2 === 0 ? "—" : data.spo2}</div>
+            <div className="metric-unit">%</div>
+            <div className="metric-range">Normal infant target: ≥ 95%</div>
+          </div>
+
+          <div className={`metric-card${data.movement !== "Normal" ? " metric-warn" : ""}`}>
             <div className="metric-card-top">
               <div className="metric-icon move-icon">
                 <MoveIcon />
               </div>
               <div className="metric-chip-wrap">
                 <span className="metric-label">Movement</span>
-                <span className="metric-status-chip normal">Sensor Active</span>
+                <span className={`metric-status-chip ${data.movement === "Normal" ? "normal" : "warning"}`}>
+                  {data.movement === "Normal" ? "Detected" : "No Movement"}
+                </span>
               </div>
             </div>
-            <div className="metric-value movement-text">{data.movement}</div>
+            <div className={`metric-value movement-text${data.movement === "Normal" ? " val-green" : " val-red"}`}>
+              {data.movement === "Normal" ? "Movement Detected" : "No Movement"}
+            </div>
             <div className="metric-unit">&nbsp;</div>
             <div className="metric-range">Motion level: {data.movementLevel ?? 0}%</div>
           </div>
@@ -247,6 +293,9 @@ function App() {
             <table className="detail-table">
               <tbody>
                 <tr><td>Global state</td><td><strong className={isEmergency ? "val-red" : "val-green"}>{data.state}</strong></td></tr>
+                <tr><td>Temperature</td><td><strong>{data.babyTemp === 0 ? "—" : `${data.babyTemp} °C`}</strong></td></tr>
+                <tr><td>Heart rate</td><td><strong>{data.heartRate === 0 ? "—" : `${data.heartRate} bpm`}</strong></td></tr>
+                <tr><td>Blood oxygen</td><td><strong>{data.spo2 === 0 ? "—" : `${data.spo2}%`}</strong></td></tr>
                 <tr><td>System message</td><td><strong>{data.message}</strong></td></tr>
                 <tr><td>Hardware link</td><td><strong>{data.connected ? "Connected" : "Offline / Simulation"}</strong></td></tr>
                 <tr><td>Data source</td><td><strong>{data.source}</strong></td></tr>
@@ -266,7 +315,7 @@ function App() {
                   <div className="guidance-head danger">Immediate Action Required</div>
                   <ul className="guidance-list">
                     <li>Check on infant immediately</li>
-                    <li>Verify heart rate sensor contact</li>
+                    <li>Verify heart rate and SpO₂ sensor contact</li>
                     <li>Confirm physical sensor conditions</li>
                     <li>Contact caregiver if unresponsive</li>
                   </ul>
