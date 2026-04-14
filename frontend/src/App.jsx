@@ -283,22 +283,6 @@ function App() {
             <div className="metric-range">Motion level: {data.movementLevel ?? 0}%</div>
           </div>
 
-          <div className={`metric-card${data.spo2 > 0 && data.spo2 < 95 ? " metric-warn" : ""}`}>
-            <div className="metric-card-top">
-              <div className="metric-icon">
-                <span style={{fontSize:"1.4rem"}}>🩸</span>
-              </div>
-              <div className="metric-chip-wrap">
-                <span className="metric-label">Saturation O₂ (SpO2)</span>
-                <span className={`metric-status-chip ${data.spo2 >= 95 ? "normal" : "warning"}`}>
-                  {data.spo2 >= 95 ? "Normal" : data.spo2 > 0 ? "Low" : "Waiting"}
-                </span>
-              </div>
-            </div>
-            <div className="metric-value">{data.spo2 > 0 ? data.spo2 : "—"}</div>
-            <div className="metric-unit">%</div>
-            <div className="metric-range">Normal range: 95 – 100%</div>
-          </div>
         </div>
 
         <div className="lower-row">
