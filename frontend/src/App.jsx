@@ -90,7 +90,7 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+        const API_BASE = import.meta.env.VITE_API_URL || "https://everybody-bonus-bacon.ngrok-free.dev";
         const res = await fetch(`${API_BASE}/api/data`, {
           headers: { "ngrok-skip-browser-warning": "true" }
         });
